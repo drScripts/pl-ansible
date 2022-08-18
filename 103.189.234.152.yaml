@@ -1,0 +1,54 @@
+
+- hosts: 103.189.234.152
+  gather_facts: yes
+  become: yes
+  become_user: ega
+	- name: "Update and upgrade systems"
+	apt:
+	update_cache: yes
+	upgrade: dist
+
+	- name: "Install dependencies"
+	  apt:
+	  name: 
+	  - net-tools
+	  - htop
+	  - curl
+	  - ca-certificates
+	  - openssh
+	  - apt-transport-https
+	  - gnupg-agent
+	  - zip
+	  - unzip
+	  - build-essential
+	  - ncdu
+	- name: "Add gpg docker to servers"
+	  apt_key: 
+	  url: https://download.docker.com/linux/ubuntu/gpg
+			
+	- name: "Add docker repository to servers"
+	  apt_repository:
+	  repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ release }} stable
+	  state: present
+			
+	- name: "Install docker"
+	  apt:
+	  name:
+	  - docker-ce
+	  - docker-ce-cli
+	  - containerd.io
+	  - docker-compose-plugin
+	  - python3-pip
+
+	- name: "Start systemd docker"
+	  systemd:
+	  state: started
+	  name: docker
+	  enabled: yes
+
+	- name: "create alias for docker-compose"
+	  lineinfile:
+	  path: /home/ega/.bashrc
+	  insertafter: EOF
+	  line: "alias docker-compose='docker compose'"
+	
