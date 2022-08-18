@@ -1,5 +1,5 @@
 
-- hosts: 103.189.234.152
+- hosts: all
   gather_facts: yes
   become: yes
   become_user: root
