@@ -1,0 +1,59 @@
+
+- hosts: 103.214.113.15
+  gather_facts: yes
+  become: yes
+  become_user: root
+  vars:
+    pub: /root/.ssh/id_rsa.pub
+    config: /root/.ssh/config
+    destination: /home/JlCTsWaM/.ssh/authorized_keys
+    release: focal
+  tasks:
+    - name: Update ubuntu package list
+      apt:
+        upgrade: full
+      register: apt_action
+      retries: 100
+      until: apt_action is success or ('Failed to lock apt for exclusive operation' not in apt_action.msg and '/var/lib/dpkg/lock' not in apt_action.msg)
+    - name: Install dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - gnupg-agent
+          - zip
+          - unzip
+          - build-essential
+          - ncdu
+    - name: "Add gpg docker to servers"
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+    - name: "Add docker repository to servers"
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ release }} stable
+        state: present
+    - name: "Install docker"
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+          - python3-pip
+    - name: "Start systemd docker"
+      systemd:
+        state: started
+        name: docker
+        enabled: yes
+    - name: "Set permission to docker.sock"
+      shell: "chmod 666 /var/run/docker.sock"
+      args:
+        executable: /bin/bash
+    - name: "create alias for docker-compose"
+      lineinfile:
+        path: /home/JlCTsWaM/.bashrc
+        insertafter: EOF
+        line: "alias docker-compose='docker compose'"
+    - name: "add vm to our cluster"
+      shell: "sudo docker run -d --privileged --restart=unless-stopped --net=host -v /etc/kubernetes:/etc/kubernetes -v /var/run:/var/run rancher/rancher-agent:v2.5.5 --server https://149.28.153.162 --token ttcqvr2wj5ncwhrs7qbpwbqhvmvm7dpzmdk2v5sfgsqmsbm4kgs5fz --ca-checksum e6cd6735c0affb5d580189bc38eeff2f5d9347deb18ee2815dc3db37c1b061e6 --node-name 103.214.113.15 --address 103.214.113.15 --worker"
+      args:
+        executable: /bin/bash
